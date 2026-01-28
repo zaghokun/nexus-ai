@@ -1,0 +1,26 @@
+# Python junk
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment (Berat & tidak perlu di-upload)
+venv/
+env/
+.venv/
+
+# Environment Variables (RAHASIA! JANGAN DIHAPUS DARI SINI)
+.env
+.env.*
+
+# Database Volume (Jika ada folder data docker di sini)
+postgres_data/
+docker-compose.yml
+alembic.ini
+
+# IDE settings (VSCode/Pycharm)
+.vscode/
+.idea/
+
+# Mac/Windows junk
+.DS_Store
+Thumbs.db
