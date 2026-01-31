@@ -68,7 +68,7 @@ export const Hero = ({ onSend }: { onSend: (msg: string) => void }) => {
         {/* Central Input Box */}
         <div className="w-full max-w-2xl relative mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl blur-xl opacity-20"></div>
-          <div className="bg-surface-dark border border-white/10 rounded-2xl shadow-2xl p-4 chat-input-glow transition-all duration-300">
+          <div className="bg-surface-dark border border-white/10 rounded-2xl shadow-2xl p-4 chat-input-glow transition-all duration-300 relative z-20">
             <textarea
               className="w-full bg-transparent border-0 text-white placeholder-gray-500 focus:ring-0 resize-none text-base py-3 max-h-48 outline-none"
               placeholder="Ask about your data, generate SQL, or analyze trends..."

@@ -1,17 +1,60 @@
-import { useState } from "react";
-import { Hero } from "./Hero"; 
+import { useState, useRef, useEffect } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { Hero } from "./Hero";
+import { chatService, type ChatMessage } from "@/services/chatService";
 
 export const ChatArea = () => {
-  const [messages, setMessages] = useState<any[]>([]); 
+  // 1. State untuk Session ID 
+  const [sessionId] = useState(() => uuidv4());
+  
+  // 2. State Pesan 
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  
+  // 3. State Loading 
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSend = (text: string) => {
-    if (!text.trim()) return;
-    
-    setMessages([
-        ...messages, 
-        { role: "user", content: text },
-        { role: "assistant", content: "Thinking..." } 
-    ]);
+  // Ref auto-scroll ke bawah
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // --- FUNGSI UTAMA PENGIRIM PESAN ---
+  const handleSend = async (text: string) => {
+    if (!text.trim() || isLoading) return;
+
+    // A. pesan USER ke layar
+    const userMsg: ChatMessage = { role: "user", content: text };
+    setMessages((prev) => [...prev, userMsg]);
+    setIsLoading(true);
+
+    // B. tempat untuk pesan AI 
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+    // C. API Service dengan Streaming
+    await chatService.sendMessageStream(
+      sessionId,
+      text,
+      (chunk) => {
+        // Callback
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const lastMsg = newMessages[newMessages.length - 1];
+          if (lastMsg.role === "assistant") {
+            lastMsg.content += chunk;
+          }
+          return newMessages;
+        });
+      },
+      () => {
+        setIsLoading(false);
+      }
+    );
   };
 
   if (messages.length === 0) {
@@ -52,22 +95,31 @@ export const ChatArea = () => {
                 <div className="font-semibold text-sm text-white">
                   {msg.role === "user" ? "You" : "Nexus AI"}
                 </div>
-                <div className="text-gray-300 leading-relaxed">
+                {/* Render Text dengan whitespace-pre-wrap agar enter/paragraf terbaca */}
+                <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
                   {msg.content}
+                  {/* Cursor Berkedip saat loading */}
+                  {msg.role === "assistant" && isLoading && idx === messages.length - 1 && (
+                    <span className="inline-block w-1.5 h-4 ml-1 align-middle bg-primary animate-pulse"/>
+                  )}
                 </div>
               </div>
             </div>
           ))}
+          {/* Invisible div untuk target scroll */}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
+      {/* Sticky Input Area */}
       <div className="absolute bottom-0 left-0 w-full bg-background-dark/95 backdrop-blur-xl border-t border-white/5 p-4 z-20">
         <div className="max-w-3xl mx-auto relative">
-          <div className="bg-surface-dark border border-white/10 rounded-xl shadow-lg p-3 chat-input-glow transition-all duration-300 relative">
+          <div className={`bg-surface-dark border border-white/10 rounded-xl shadow-lg p-3 transition-all duration-300 relative ${isLoading ? 'opacity-50 cursor-not-allowed' : 'chat-input-glow'}`}>
             <textarea 
-              className="w-full bg-transparent border-0 text-white placeholder-gray-500 focus:ring-0 resize-none text-sm py-2 max-h-48 pr-10 outline-none" 
-              placeholder="Ask follow-up questions..." 
+              className="w-full bg-transparent border-0 text-white placeholder-gray-500 focus:ring-0 resize-none text-sm py-2 max-h-48 pr-10 outline-none disabled:cursor-not-allowed" 
+              placeholder={isLoading ? "Nexus AI is thinking..." : "Ask follow-up questions..."}
               rows={1} 
+              disabled={isLoading}
               style={{ minHeight: "44px" }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -82,7 +134,9 @@ export const ChatArea = () => {
                 <ActionButton icon="add_circle" tooltip="Attach" />
                 <ActionButton icon="mic" tooltip="Voice Input" />
               </div>
-              <button className="bg-primary hover:bg-blue-600 text-white rounded-lg p-1.5 transition-colors shadow-[0_0_10px_rgba(19,91,236,0.3)] flex items-center justify-center">
+              <button 
+                disabled={isLoading}
+                className="bg-primary hover:bg-blue-600 disabled:bg-gray-700 text-white rounded-lg p-1.5 transition-colors shadow-[0_0_10px_rgba(19,91,236,0.3)] flex items-center justify-center">
                 <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
               </button>
             </div>
