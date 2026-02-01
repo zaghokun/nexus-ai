@@ -35,6 +35,26 @@ async def send_message(request:ChatRequest, db: AsyncSession=Depends(get_db)):
         media_type="text/event-stream"
     )
 
+@router.get("/sessions")
+async def get_chat_history(db: AsyncSession = Depends(get_db)):
+    service = ChatService(db)
+    sessions = await service.get_all_sessions()
+
+    return[
+        {
+            "id": str(session.id),
+            "title": session.title or "New Chat",
+            "updated_at": session.created_at
+        }
+        for session in sessions
+    ]
+
+@router.get("/{session_id}/messages")
+async def get_session_messages(session_id: str, db: AsyncSession = Depends(get_db)):
+    service = ChatService(db)
+    messages = await service.get_message_by_session(session_id)
+    return messages
+
 @router.get("/history/{session_id}", response_model=List[MessageSchema])
 async def get_chat_history(
     session_id: str,

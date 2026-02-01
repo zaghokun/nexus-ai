@@ -1,19 +1,16 @@
 import { useState, useRef, useEffect } from "react";
-import { v4 as uuidv4 } from "uuid";
 import { Hero } from "./Hero";
 import { chatService, type ChatMessage } from "@/services/chatService";
 
-export const ChatArea = () => {
-  // 1. State untuk Session ID 
-  const [sessionId] = useState(() => uuidv4());
+export const ChatArea = ({ sessionId, onMessageSent }: { 
+  sessionId: string; 
+  onMessageSent: () => void; 
+}) => {
   
-  // 2. State Pesan 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   
-  // 3. State Loading 
   const [isLoading, setIsLoading] = useState(false);
 
-  // Ref auto-scroll ke bawah
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -24,24 +21,34 @@ export const ChatArea = () => {
     scrollToBottom();
   }, [messages]);
 
-  // --- FUNGSI UTAMA PENGIRIM PESAN ---
+  useEffect(() => {
+    const loadMessages = async () => {
+      setIsLoading(true);
+      setMessages([]);
+
+      const oldMessages = await chatService.getMessages(sessionId);
+      
+      setMessages(oldMessages);
+      setIsLoading(false);
+    };
+
+    loadMessages();
+  }, [sessionId]);
+
+
   const handleSend = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
-    // A. pesan USER ke layar
     const userMsg: ChatMessage = { role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
 
-    // B. tempat untuk pesan AI 
     setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
-    // C. API Service dengan Streaming
     await chatService.sendMessageStream(
       sessionId,
       text,
       (chunk) => {
-        // Callback
         setMessages((prev) => {
           const newMessages = [...prev];
           const lastMsg = newMessages[newMessages.length - 1];
@@ -53,17 +60,19 @@ export const ChatArea = () => {
       },
       () => {
         setIsLoading(false);
+        onMessageSent();
       }
     );
   };
 
-  if (messages.length === 0) {
+
+  if (messages.length === 0 && !isLoading) {
     return <Hero onSend={handleSend} />;
   }
 
   return (
     <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-background-dark">
-      {/* Header Sticky */}
+      {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 absolute top-0 w-full z-10 bg-gradient-to-b from-background-dark to-transparent">
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-dark/50 border border-white/5 backdrop-blur-sm">
           <span className="text-sm font-medium text-gray-400">Model:</span>
@@ -79,7 +88,7 @@ export const ChatArea = () => {
         </div>
       </header>
 
-      {/* Chat History List */}
+      {/* List Pesan */}
       <div className="flex-1 overflow-y-auto w-full scroll-smooth">
         <div className="max-w-3xl mx-auto px-4 pt-24 pb-48 space-y-8">
           {messages.map((msg, idx) => (
@@ -95,10 +104,8 @@ export const ChatArea = () => {
                 <div className="font-semibold text-sm text-white">
                   {msg.role === "user" ? "You" : "Nexus AI"}
                 </div>
-                {/* Render Text dengan whitespace-pre-wrap agar enter/paragraf terbaca */}
                 <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
                   {msg.content}
-                  {/* Cursor Berkedip saat loading */}
                   {msg.role === "assistant" && isLoading && idx === messages.length - 1 && (
                     <span className="inline-block w-1.5 h-4 ml-1 align-middle bg-primary animate-pulse"/>
                   )}
@@ -106,12 +113,11 @@ export const ChatArea = () => {
               </div>
             </div>
           ))}
-          {/* Invisible div untuk target scroll */}
           <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Sticky Input Area */}
+      {/* Input Area */}
       <div className="absolute bottom-0 left-0 w-full bg-background-dark/95 backdrop-blur-xl border-t border-white/5 p-4 z-20">
         <div className="max-w-3xl mx-auto relative">
           <div className={`bg-surface-dark border border-white/10 rounded-xl shadow-lg p-3 transition-all duration-300 relative ${isLoading ? 'opacity-50 cursor-not-allowed' : 'chat-input-glow'}`}>
@@ -125,7 +131,7 @@ export const ChatArea = () => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                    e.preventDefault();
                    handleSend(e.currentTarget.value);
-                   e.currentTarget.value = ""; // Clear input
+                   e.currentTarget.value = "";
                 }
               }}
             />

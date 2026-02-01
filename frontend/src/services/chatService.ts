@@ -5,6 +5,13 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface ChatSession{
+  id: string;
+  title: string;
+  created_at: string;
+}
+
+
 export const chatService = {
   sendMessageStream: async (
     sessionId: string,
@@ -48,4 +55,27 @@ export const chatService = {
       onComplete();
     }
   },
+
+  getSessions: async (): Promise<ChatSession[]> => {
+    try{
+      const response = await fetch(`${API_BASE_URL}/chat/sessions`);
+      if (!response.ok) throw new Error("Gagal mengambl history");
+      return await response.json();
+    }catch(error){
+      console.error(error);
+      return [];
+    }
+  },
+
+  getMessages: async (sessionId: string): Promise<ChatMessage[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/chat/${sessionId}/messages`);
+      if (!response.ok) throw new Error("Gagal mengambil pesan");
+      return await response.json();
+    } catch (error) {
+      console.error(error);
+      return [];
+    }
+  },
 };
+

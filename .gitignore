@@ -1,26 +1,49 @@
-# Python junk
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Virtual Environment (Berat & tidak perlu di-upload)
+# Virtual Environment 
 venv/
 env/
 .venv/
 
-# Environment Variables (RAHASIA! JANGAN DIHAPUS DARI SINI)
+# Environment Variables 
 .env
 .env.*
 
-# Database Volume (Jika ada folder data docker di sini)
+# Database Volume 
 postgres_data/
 docker-compose.yml
 alembic.ini
 
-# IDE settings (VSCode/Pycharm)
+# IDE settings 
 .vscode/
 .idea/
 
-# Mac/Windows junk
 .DS_Store
 Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
