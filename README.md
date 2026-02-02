@@ -9,6 +9,30 @@
 
 Built with **FastAPI** and **LangChain**, it leverages Google's **Gemini Pro** to act as a specialized Data Analyst assistant, capable of retaining conversation history and serving multiple concurrent users efficiently.
 
+<pre>
+  graph TD
+    User[User / Data Analyst] -->|Upload CSV & Ask Query| Frontend[Streamlit / React UI]
+    Frontend -->|Send Request| Backend[Backend API (FastAPI)]
+    
+    subgraph "Brain & Knowledge (RAG)"
+        Backend -->|1. Retrieve Context| VectorDB[(ChromaDB / Vector Store)]
+        VectorDB -->|Return Pandas/Scikit-learn Docs| Backend
+        Backend -->|2. Send Prompt + Context| LLM[LLM (Gemini/GPT)]
+    end
+    
+    subgraph "Action & Security"
+        LLM -->|3. Generate Python Code| Backend
+        Backend -->|4. Execute Code| Sandbox[Secure Sandbox / Docker]
+        Sandbox -->|5. Return Output/Graph| Backend
+    end
+    
+    Backend -->|6. Final Answer| Frontend
+    Frontend -->|Display Insight| User
+
+    classDef secure fill:#f9f,stroke:#333,stroke-width:2px;
+    class Sandbox secure;
+</pre>
+
 ---
 
 ## 🚀 Key Features
